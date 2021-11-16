@@ -10,38 +10,40 @@ const data          = JSON.parse(dataJson);
 const overviewTemp  = fs.readFileSync(`${__dirname}/templates/overview-template.html`, 'utf-8');
 const cardTemp      = fs.readFileSync(`${__dirname}/templates/card-template.html`, 'utf-8');
 
-const productCards = (function generateProductCards() {
-  const keywords    = ['{PRODUCT_IMG}', '{PRODUCT_NAME}', '{PRODUCT_QUANTITY}', '{PRODUCT_PRICE}', '{PRODUCT_ID}'];
+function createDynamicHTML(template, arrayOfData) {
+  const keywords  = ['{PRODUCT_IMG}', '{PRODUCT_NAME}', '{PRODUCT_QUANTITY}', '{PRODUCT_PRICE}', '{PRODUCT_ID}', '{PRODUCT_NOT_ORGANIC}'];
 
-  const arrOfProductCards  = data.map(productData => {
-    let productCard = cardTemp;
+  const arrOfStrHTML  = arrayOfData.map(productData => {
+    let strHTML = template;
     keywords.forEach(k => {
       switch (k) {
         case '{PRODUCT_IMG}':
-          productCard = productCard.replaceAll('{PRODUCT_IMG}', productData['image']);
+          strHTML = strHTML.replaceAll('{PRODUCT_IMG}', productData['image']);
           break;
         case '{PRODUCT_NAME}':
-          productCard = productCard.replaceAll('{PRODUCT_NAME}', productData['productName']);
+          strHTML = strHTML.replaceAll('{PRODUCT_NAME}', productData['productName']);
           break;
         case '{PRODUCT_QUANTITY}':
-          productCard = productCard.replaceAll('{PRODUCT_QUANTITY}', productData['quantity']);
+          strHTML = strHTML.replaceAll('{PRODUCT_QUANTITY}', productData['quantity']);
           break;
         case '{PRODUCT_PRICE}':
-          productCard = productCard.replaceAll('{PRODUCT_PRICE}', productData['price']);
+          strHTML = strHTML.replaceAll('{PRODUCT_PRICE}', productData['price']);
           break;
         case '{PRODUCT_ID}':
-          productCard = productCard.replaceAll('{PRODUCT_ID}', productData['id']);
+          strHTML = strHTML.replaceAll('{PRODUCT_ID}', productData['id']);
+          break;
+        case '{PRODUCT_NOT_ORGANIC}':
+          strHTML = strHTML.replaceAll('{PRODUCT_NOT_ORGANIC}', `${productData.organic ? '' : 'not-organic'}`);
       }
     })
-    return productCard;
+    return strHTML;
   });
 
-  return arrOfProductCards.join('')
-})();
+  return arrOfStrHTML.join('')
+}
 
-const overviewPage = (function generateOverview() {
-  return overviewTemp.replace('{PRODUCT_CARDS}', productCards);
-})();
+const cardsHTML = createDynamicHTML(cardTemp, data);
+const overviewPage = overviewTemp.replace('{PRODUCT_CARDS}', cardsHTML);
 
 // Server
 const server = http.createServer((req, res) => {

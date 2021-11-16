@@ -1,17 +1,29 @@
-const fs      = require('fs');
-const http    = require('http');
+const fs    = require('fs');
+const http  = require('http');
+const url   = require('url');
 
-const port    = 3000;
-const host    = 'localhost';
+const port  = 3000;
+const host  = 'localhost';
 
 const dataJson      = fs.readFileSync(`${__dirname}/dev-data/data.json`, 'utf-8');
 const data          = JSON.parse(dataJson);
 
 const overviewTemp  = fs.readFileSync(`${__dirname}/templates/overview-template.html`, 'utf-8');
 const cardTemp      = fs.readFileSync(`${__dirname}/templates/card-template.html`, 'utf-8');
+const productTemp   = fs.readFileSync(`${__dirname}/templates/product-template.html`, 'utf-8');
 
 function createDynamicHTML(template, arrayOfData) {
-  const keywords  = ['{PRODUCT_IMG}', '{PRODUCT_NAME}', '{PRODUCT_QUANTITY}', '{PRODUCT_PRICE}', '{PRODUCT_ID}', '{PRODUCT_NOT_ORGANIC}'];
+  const keywords  = [
+    '{PRODUCT_IMG}',
+    '{PRODUCT_NAME}',
+    '{PRODUCT_QUANTITY}',
+    '{PRODUCT_PRICE}',
+    '{PRODUCT_ID}',
+    '{PRODUCT_NOT_ORGANIC}',
+    '{PRODUCT_FROM}',
+    '{PRODUCT_NUTRIENS}',
+    '{PRODUCT_DESCRIPTION}'
+  ];
 
   const arrOfStrHTML  = arrayOfData.map(productData => {
     let strHTML = template;
@@ -34,34 +46,50 @@ function createDynamicHTML(template, arrayOfData) {
           break;
         case '{PRODUCT_NOT_ORGANIC}':
           strHTML = strHTML.replaceAll('{PRODUCT_NOT_ORGANIC}', `${productData.organic ? '' : 'not-organic'}`);
+          break;
+        case '{PRODUCT_FROM}':
+          strHTML = strHTML.replaceAll('{PRODUCT_FROM}', productData['from']);
+          break;
+        case '{PRODUCT_NUTRIENS}':
+          strHTML = strHTML.replaceAll('{PRODUCT_NUTRIENS}', productData['nutrients']);
+          break;
+        case '{PRODUCT_DESCRIPTION}':
+          strHTML = strHTML.replaceAll('{PRODUCT_DESCRIPTION}', productData['description']);
+          break;
       }
     })
     return strHTML;
   });
-
-  return arrOfStrHTML.join('')
+  return arrOfStrHTML.join('');
 }
-
-const cardsHTML = createDynamicHTML(cardTemp, data);
-const overviewPage = overviewTemp.replace('{PRODUCT_CARDS}', cardsHTML);
 
 // Server
 const server = http.createServer((req, res) => {
-  const path = req.url;
+  const { pathname, query } = url.parse(req.url, true);
 
   // Root Page
-  if (path === '/' || path === '/overview') {
+  if (pathname === '/' || pathname === '/overview') {
     res.writeHead(200, {
       'Content-type': 'text/html'
     })
+
+    const cardsHTML     = createDynamicHTML(cardTemp, data);
+    const overviewPage  = overviewTemp.replace('{PRODUCT_CARDS}', cardsHTML);
+
     res.end(overviewPage);
 
     // Product page
-  } else if (path === '/product') {
-    res.end('This is PRODUCT')
+  } else if (pathname === '/product') {
+    res.writeHead(200, {
+      'Content-Type': 'text/html'
+    })
 
-    // API
-  } else if (path === '/api') {
+    const product     = data.filter(obj => obj.id == query.id);
+    const productPage = createDynamicHTML(productTemp, product);
+
+    res.end(productPage);
+
+  } else if (pathname === '/api') {
     res.writeHead(200, {
       'Content-type': 'application/json'
     });

@@ -1,0 +1,11 @@
+{
+  "name": "practice-for-vanilla-node.js",
+  "version": "1.0.0",
+  "description": "A simple node application for practicing 'http' and 'fs' modules",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Kalender Toptas",
+  "license": "MIT"
+}
